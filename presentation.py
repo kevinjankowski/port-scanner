@@ -1,4 +1,5 @@
 import argparse
+import engine
 
 
 def setup_cli():
@@ -16,6 +17,6 @@ def setup_cli():
 
 def run_application():
     args = setup_cli()
-    # to get some specific argument you can type: args.<name_of_arg>, fe.: args.target.
+    engine.tcp_full_handshake_scan(args.target, [80, 443, 8080, 22, 21])
 
 
