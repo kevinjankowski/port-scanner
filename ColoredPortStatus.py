@@ -1,5 +1,5 @@
 """
-This file contains two functions, that can be used in engine.py scanning method functions.
+This file contains functions, that can be used in engine.py in scanning method functions.
 """
 
 RED = "\033[91m"
@@ -17,6 +17,26 @@ def opened():
     return f"{GREEN}open{RESET}"
 
 def closed():
+    """
+    Generate red "closed" text for closed ports
+
+    Returns:
+        string: Red "closed" text
+    """
+
+    return f"{RED}closed{RESET}"
+
+def filtered():
+    """
+    Generate red "filtered" text for filtered ports
+
+    Returns:
+        string: Red "filtered" text
+    """
+
+    return f"{RED}filtered{RESET}"
+
+def closed_or_filtered():
     """
     Generate red "closed or filtered" text for closed or filtered ports
 

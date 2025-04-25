@@ -12,7 +12,7 @@ def setup_cli():
     """
 
     parser = argparse.ArgumentParser(
-        description='================ PORT SCANNER ================'
+        description='This is port scanner application. Don\'t use it without target host permission!'
     )
     parser.add_argument('-t', '--target', required=True,
                         help='IP address for scanning target (fe. 10.0.2.15).')
@@ -73,7 +73,7 @@ def run_application():
         case 'tcp':
             engine.tcp_full_handshake_scan(target, ports)
         case 'syn':
-            print("syn method")
+            engine.syn_scan(target, ports)
         case 'udp':
             print("udp method")
         case 'fin':
