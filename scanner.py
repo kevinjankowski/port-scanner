@@ -1,8 +1,15 @@
 import presentation
 
-
-# To run this application you have to use terminal with minimum python3.10.
-# type "python scanner.py --help" for help
+"""
++---------------------| PORT SCANNER |---------------------+
+| This application requires minimum python3.10             |
+| For help type: python scanner.py --help                  |
+|                                                          |
+| Authors:                                                 |
+|   - Kevin Jankowski                                      |
+|   - Jakub Mocek                                          |
++----------------------------------------------------------+
+"""
 
 def main():
     presentation.run_application()

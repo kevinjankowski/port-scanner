@@ -3,19 +3,39 @@ import engine
 
 
 def setup_cli():
+    """
+    Set flags. Read arguments from CLI and turn them into Python's variable
+
+    Returns:
+        namespace: The parser.parse_args() method runs the parser and
+                    places the extracted data in an argparse.Namespace object
+    """
+
     parser = argparse.ArgumentParser(
-        description='Skaner portów z wsparciem dla metod TCP/UDP'
+        description='================ PORT SCANNER ================'
     )
     parser.add_argument('-t', '--target', required=True,
-                        help='Cel skanowania (IP lub zakres CIDR)')
+                        help='IP address for scanning target (fe. 10.0.2.15).')
     parser.add_argument('-p', '--ports', type=str, default='1-1024',
-                        help='Zakres portów (np. 80,443 lub 1-65535)')
+                        help='Port range for scan (fe. 80,443 or 1-65535).')
     parser.add_argument('-m', '--method', choices=['tcp', 'syn', 'udp', 'fin'],
-                        default='tcp', help='Metoda skanowania')
+                        default='tcp', help='Scanning method. Default is "tcp".')
+
     return parser.parse_args()
 
 
 def get_ports(s_ports):
+    """
+    Turn string that represents ports into list of integers
+
+    Args:
+        s_ports (str): port, ports or port range for scan (fe. "80" or "80,443" or "1-65535")
+
+    Returns:
+        list: List of integers that represents ports for scan (fe. [80] or [80,443] or [1,2,3, ..., 65535]
+
+    """
+
     # if string contains "-" sign, that means, that it is a range of port numbers (fe. "11-222")
     if "-" in s_ports:
         # separate string to array of two strings.
@@ -31,14 +51,21 @@ def get_ports(s_ports):
     elif "," in s_ports:
         return list(map(int, s_ports.split(',')))
 
+    else:
+        return [int(s_ports)]
+
 
 def run_application():
-    # save parameters from cli to single variable
+    """
+    Runs chosen scan method with user's parameters.
+    """
+
+    # save parameters from namespace to single variable
     args = setup_cli()
 
-    # basic parameters of scan
+    # extract basic parameters of scan into separate variables
     target = args.target
-    ports = get_ports(args.ports)  # get_ports(s_ports) method returns array of port numbers
+    ports = get_ports(args.ports)
     method = args.method
 
     # run chosen method
