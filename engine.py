@@ -159,7 +159,7 @@ def udp_scan(target_host, ports):
 
         except socket.timeout:
             # Timeout means, that port is probably filtered
-            print(f"- {port}: {ColoredPortStatus.filtered()}")
+            print(f"- {port}: {ColoredPortStatus.opened()}|{ColoredPortStatus.filtered()}")
 
         except Exception as e:
             print(f"Error has occurred - {e}")
@@ -178,23 +178,28 @@ def fin_scan(target_host, ports):
     ip = resolve_hostname(target_host)
 
     for port in ports:
-        # Build TCP packet with SYN flag
-        ip_layer = IP(dst=ip)
-        tcp_layer = TCP(dport=port, flags="F")
-        packet = ip_layer / tcp_layer
 
-        # Send packet and return for response
-        start_time = time.time()
-        response = sr1(packet, timeout=1, verbose=False)
-        end_time = time.time()
+        try:
+            # Build TCP packet with SYN flag
+            ip_layer = IP(dst=ip)
+            tcp_layer = TCP(dport=port, flags="F")
+            packet = ip_layer / tcp_layer
 
-        # Calculate response time in ms
-        response_time = round((end_time - start_time) * 1000, 2)
+            # Send packet and return for response
+            start_time = time.time()
+            response = sr1(packet, timeout=1, verbose=False)
+            end_time = time.time()
 
-        # Results interpretation
-        if response is None:
-            print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+            # Calculate response time in ms
+            response_time = round((end_time - start_time) * 1000, 2)
 
-        elif response[TCP].flags == 0x14:
-            print(f'- {port}: {ColoredPortStatus.closed()}')
+            # Results interpretation
+            if response is None:
+                print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+
+            elif response[TCP].flags == 0x14:
+                print(f'- {port}: {ColoredPortStatus.closed()}')
+        except PermissionError:
+            print("Operation not permitted!")
+
 
