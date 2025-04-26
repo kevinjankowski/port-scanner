@@ -6,28 +6,36 @@ from scapy.layers.inet import IP, TCP, sr1
 import time
 import ColoredPortStatus
 
+def resolve_hostname(hostname):
+    """
+    Translate a host name to IPv4 address format if necessary
 
-def tcp_full_handshake_scan(target_host, ports):
+    Args:
+        hostname (str): address of target host
+
+    Returns:
+        str: Resolved hostname in numeric format (fe. localhost -> 127.0.0.1)
+    """
+    try:
+        ip = socket.gethostbyname(hostname)
+        print(f"Start scanning host: {hostname} ({ip})")
+        return ip
+    except socket.gaierror:
+        print(f"Can't resolve hostname: {hostname}")
+
+
+def tcp_scan(target_host, ports):
     """
     Scan ports of target host with full handshake method. Print results of scan in CLI.
 
     Args:
-        target_host (str): IP address of target host
+        target_host (str): address of target host
         ports (list): list of ports for scan
-
-    Returns:
-        dict: Dictionary with results of scanning in format {port: status}
     """
 
-    open_ports = {}
 
     # Translate a host name to IPv4 address format if necessary
-    try:
-        ip = socket.gethostbyname(target_host)
-        print(f"Start scanning host: {target_host} ({ip})")
-    except socket.gaierror:
-        print(f"Can't resolve hostname: {target_host}")
-        return open_ports
+    ip = resolve_hostname(target_host)
 
     # Scan every port
     for port in ports:
@@ -47,22 +55,19 @@ def tcp_full_handshake_scan(target_host, ports):
             # Result interpretation
             if result == 0:
                 print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
-                open_ports[port] = "open"
+
             else:
                 print(f"- {port}: {ColoredPortStatus.closed_or_filtered()}")
-                open_ports[port] = "closed or filtered"
 
             # Close socket
             s.close()
 
         except socket.timeout:
             print(f"- {port}: filtered (timeout)")
-            open_ports[port] = "filtered (timeout)"
+
         except socket.error as e:
             print(f"- {port}: error - {e}")
-            open_ports[port] = f"error - {e}"
 
-    return open_ports
 
 
 def syn_scan(target_host, ports):
@@ -72,21 +77,12 @@ def syn_scan(target_host, ports):
     Args:
         target_host (str): IP address of target host
         ports (list): list of ports for scan
-
-    Returns:
-        dict: Dictionary with results of scanning in format {port: status}
-
     """
 
     open_ports = {}
 
     # Translate a host name to IPv4 address format if necessary
-    try:
-        ip = socket.gethostbyname(target_host)
-        print(f"Start scanning host: {target_host} ({ip})")
-    except socket.gaierror:
-        print(f"Can't resolve hostname: {target_host}")
-        return open_ports
+    ip = resolve_hostname(target_host)
 
     # Scan every port
     for port in ports:
@@ -107,32 +103,69 @@ def syn_scan(target_host, ports):
 
             # Result interpretation
             if response is None:
-                open_ports[port] = "filtered"
+                print(f"- {port}: {ColoredPortStatus.filtered()}")
             elif response.haslayer(TCP): # If response contains TCP layer
 
-                # Check if response flag is SYN-ACK
+                # Check if response flag is SYN-ACK. If it is - opened
                 if response[TCP].flags == 0x12:
                     # Sending RST flag
                     rst_packet = ip_layer/TCP(dport=port, flags="R")
                     sr1(rst_packet, timeout=1, verbose=False)
 
                     print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
-                    open_ports[port] = "open"
 
-                # Check if response flag is RST-ACK
+                # Check if response flag is RST-ACK. If it is - closed
                 elif response[TCP].flags == 0x14:
-                    print(f"- {port}: {ColoredPortStatus.closed()} (response time: {response_time} ms)")
-                    open_ports[port] = "closed"
+                    print(f"- {port}: {ColoredPortStatus.closed()}")
 
                 # If none of above was executed, it means that is probably filtered
                 else:
-                    print(f"- {port}: {ColoredPortStatus.filtered()} (response time: {response_time} ms)")
-                    open_ports[port] = "filtered"
-
-            # Another TCP flags
-            else:
-                print(f"- {port}: {ColoredPortStatus.filtered()} (response time: {response_time} ms)")
-                open_ports[port] = "filtered"
+                    print(f"- {port}: {ColoredPortStatus.filtered()}")
 
         except Exception as e:
-            open_ports[port] = f"error - {e}"
+            print(f"Error has occurred - {e}")
+
+
+def udp_scan(target_host, ports):
+    """
+    Scan ports of target host with UDP method. Print results of scan in CLI.
+
+    Args:
+        target_host (str): IP address of target host
+        ports (list): list of ports for scan
+    """
+
+    # Translate a host name to IPv4 address format if necessary
+    ip = resolve_hostname(target_host)
+
+    for port in ports:
+        # Create UDP socket (AF_INTER - address family IPv4, SOCK_DGRAM - connection type UDP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(1)  # Timeout set for 1 second
+
+        try:
+            # send empty datagram
+            start_time = time.time()
+            s.sendto(b'', (ip, port))
+            end_time = time.time()
+
+            # Calculate response time in ms
+            response_time = round((end_time - start_time) * 1000, 2)
+
+            # try to receive a response
+            data, addr = s.recvfrom(1024)
+            print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+
+            # Close socket
+            s.close()
+
+        except ConnectionRefusedError:
+            # redeemed "ICMP Port Unreachable"
+            print(f"- {port}: {ColoredPortStatus.closed()}")
+
+        except socket.timeout:
+            # Timeout means, that port is probably filtered
+            print(f"- {port}: {ColoredPortStatus.filtered()}")
+
+        except Exception as e:
+            print(f"Error has occurred - {e}")

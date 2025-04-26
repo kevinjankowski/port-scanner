@@ -71,10 +71,10 @@ def run_application():
     # run chosen method
     match method:
         case 'tcp':
-            engine.tcp_full_handshake_scan(target, ports)
+            engine.tcp_scan(target, ports)
         case 'syn':
             engine.syn_scan(target, ports)
         case 'udp':
-            print("udp method")
+            engine.udp_scan(target, ports)
         case 'fin':
             print("fin method")
