@@ -77,4 +77,4 @@ def run_application():
         case 'udp':
             engine.udp_scan(target, ports)
         case 'fin':
-            print("fin method")
+            engine.fin_scan(target, ports)
