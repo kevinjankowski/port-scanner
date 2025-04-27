@@ -54,19 +54,19 @@ def tcp_scan(target_host, ports):
 
                 # Result interpretation
                 if result == 0:
-                    print(f"- {host}:{port} = {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+                    print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
 
                 else:
-                    print(f"- {host}:{port} = {ColoredPortStatus.closed_or_filtered()}")
+                    print(f"- {port}: {ColoredPortStatus.closed_or_filtered()}")
 
                 # Close socket
                 s.close()
 
             except socket.timeout:
-                print(f"- {host}:{port} = filtered (timeout)")
+                print(f"- {port}: filtered (timeout)")
 
             except socket.error as e:
-                print(f"- {host}:{port} = error - {e}")
+                print(f"- {port}: error - {e}")
 
 
 def syn_scan(target_host, ports):
@@ -101,7 +101,7 @@ def syn_scan(target_host, ports):
 
                 # Result interpretation
                 if response is None:
-                    print(f"- {host}:{port} = {ColoredPortStatus.filtered()}")
+                    print(f"- {port}: {ColoredPortStatus.filtered()}")
                 elif response.haslayer(TCP): # If response contains TCP layer
 
                     # Check if response flag is SYN-ACK. If it is - opened
@@ -110,15 +110,15 @@ def syn_scan(target_host, ports):
                         rst_packet = ip_layer/TCP(dport=port, flags="R")
                         sr1(rst_packet, timeout=1, verbose=False)
 
-                        print(f"- {host}:{port} = {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+                        print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
 
                     # Check if response flag is RST-ACK. If it is - closed
                     elif response[TCP].flags == 0x14:
-                        print(f"- {host}:{port} = {ColoredPortStatus.closed()}")
+                        print(f"- {port}: {ColoredPortStatus.closed()}")
 
                     # If none of above was executed, it means that is probably filtered
                     else:
-                        print(f"- {host}:{port} = {ColoredPortStatus.filtered()}")
+                        print(f"- {port}: {ColoredPortStatus.filtered()}")
 
             except Exception as e:
                 print(f"Error has occurred - {e}")
@@ -156,10 +156,10 @@ def udp_scan(target_host, ports):
 
                 # Result interpretation
                 if response is None:
-                    print(f"- {host}:{port} = {ColoredPortStatus.opened()}|{ColoredPortStatus.filtered()}")
+                    print(f"- {port}: {ColoredPortStatus.opened()}|{ColoredPortStatus.filtered()}")
 
                 elif response.haslayer(UDP):
-                    print(f"- {host}:{port} = {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+                    print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
 
                 elif response.haslayer(ICMP):
                     icmp_code = response.getlayer(ICMP).code
@@ -168,9 +168,9 @@ def udp_scan(target_host, ports):
 
                     # if icmp type=3 and code=3 it means, that we received ICMP Host unreachable = closed
                     if icmp_code == 3 and icmp_type == 3:
-                        print(f"- {host}:{port} = {ColoredPortStatus.closed()}")
+                        print(f"- {port}: {ColoredPortStatus.closed()}")
                     else:
-                        print(f"- {host}:{port} = {ColoredPortStatus.filtered()}")
+                        print(f"- {port}: {ColoredPortStatus.filtered()}")
 
             except PermissionError:
                 print("Operation not permitted!")
@@ -211,10 +211,10 @@ def fin_scan(target_host, ports):
 
                 # Results interpretation
                 if response is None:
-                    print(f"- {host}:{port} = {ColoredPortStatus.opened()} (response time: {response_time} ms)")
+                    print(f"- {port}: {ColoredPortStatus.opened()} (response time: {response_time} ms)")
 
                 elif response[TCP].flags == 0x14:
-                    print(f'- {host}:{port} = {ColoredPortStatus.closed()}')
+                    print(f'- {port}: {ColoredPortStatus.closed()}')
 
             except PermissionError:
                 print("Operation not permitted!")
